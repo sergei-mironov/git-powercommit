@@ -2,8 +2,8 @@ Git Powercommit
 ===============
 
 This repo contains the end-user [shell script](./git-powercommit) implementing
-`git powercommit` command for commiting and pushing the changes in your Git
-repository with meaningless commit messages. The script performs pulls/stashes
+`git powercommit` command for commiting and pushing the changes to your Git
+repository. The script uses meaningless commit messages, performs pulls/stashes
 as required and supports git submodules. Thus we try to automate a typical work
 scenario of a lazy developer.
 
