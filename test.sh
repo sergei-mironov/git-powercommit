@@ -2,6 +2,7 @@
 
 CWD=$(cd $(dirname $0); pwd;)
 TROOT="$CWD/_tests"
+PATH=$CWD:$PATH
 
 mkrepo() {(
   set -e -x
@@ -63,7 +64,7 @@ powercommit() {(
   set -e -x
   cd -P "$TD/$1"
   shift
-  "$CWD/git-powercommit.sh" "$@"
+  git powercommit "$@"
 )}
 
 test1() {(
@@ -103,7 +104,7 @@ test2() {(
   modify repo1 'modules/sub2/lvl1/file1'
 
   cd -P "$TD/repo1"
-  powercommit repo1 --recursive
+  powercommit repo1
   git status --porcelain
   git log --oneline | grep 'Bump'
 )}

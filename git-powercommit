@@ -9,7 +9,7 @@ which git 2>&1 >/dev/null || \
   errexit "\`git\` is not installed"
 
 BNAME=powercommit
-RECURSIVE=`echo "$@" | grep -q -E '\-\-recursive' && echo y || echo n`
+RECURSIVE=`echo "$@" | grep -q -E '\-\-no-recursive' && echo n || echo y`
 DRYRUN=`echo "$@" | grep -q -E '\-\-dry-run' && echo y || echo n`
 if test -z "$INDENT" ; then
   INDENT=""
