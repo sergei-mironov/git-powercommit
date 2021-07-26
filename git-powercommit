@@ -5,20 +5,56 @@ errexit() {
   exit 1
 }
 
+msg() {
+  echo "$@" >&2
+}
+
 which git 2>&1 >/dev/null || \
   errexit "\`git\` is not installed"
 
 ME=`basename $0`
 BNAME=powercommit
-RECURSIVE=`echo "$@" | grep -q -E '\-\-no-recursive' && echo n || echo y`
-DRYRUN=`echo "$@" | grep -q -E '\-\-dry-run' && echo y || echo n`
-SHOWHELP=`echo "$@" | grep -q -E '\-h|--help' && echo y || echo n`
-DEBUG=`echo "$@" | grep -q -E '\--debug' && echo y || echo n`
-NODEBUG=`echo "$@" | grep -q -E '\--no-debug' && echo y || echo n`
+DRYRUN=n
+DEBUG=n
+NODEBUG=n
+opts=$(getopt -o ':h' -l "no-recursive,dry-run,help,debug,log:" -- "$@")
+if test "$?" != "0" ; then
+  echo "Invalid options passed" >&2
+  SHOWHELP=y
+else
+  opts_bak="$@"
+  eval set -- "$opts"
+  while test -n "$1"; do
+    case "$1" in
+      --) ;;
+      --log) LOGFILE="$2" ; shift ;;
+      --dry-run) DRYRUN=y ;;
+      --debug) DEBUG=y ;;
+      --no-debug) NODEBUG=y ;;
+      *) echo "Unknown option $1" >&2; SHOWHELP=y ;;
+    esac
+    shift
+  done
+  eval set -- "$opts_bak"
+fi
 
 if test "$SHOWHELP" = "y" ; then
-  echo "Usage: $ME [-h|--help] [--debug] [--dry-run] [--no-recursive]" >&2
+  echo "Usage: $ME [-h|--help] [--debug] [--dry-run] [--no-recursive] [--log=-|FILE]" >&2
   exit 1
+fi
+
+if test -n "$LOGFILE" ; then
+  if test "$LOGFILE" != "-" ; then
+    msg "Logging to \"$LOGFILE\""
+    exec >>"$LOGFILE"
+  else
+    msg "Logging to stdout"
+  fi
+else
+  LOGDIR=`test -d "$TMPDIR" && echo $TMPDIR || echo /tmp`
+  LOGFILE="$LOGDIR/git_powercommit_$UID.log"
+  msg "Logging to \"$LOGFILE\""
+  exec >>"$LOGFILE"
 fi
 
 if test -z "$INDENT" ; then
@@ -89,6 +125,7 @@ filter_normal() {
 commit_normal() {
   # Commit changes assuming that the path points to normal file/folder
   local path="$1"
+  msg "Committing \"$path\""
   run git add -u -- "$path"
   run git commit -m "Update $path"
 }
@@ -106,6 +143,7 @@ filter_subm() {
 commit_subm() {
   # Commit changes assuming that the path points to a submodule
   local path="$1"
+  msg "Committing submodule \"$path\""
   run git add -u -- "$path"
   run git commit -m "Bump $path"
 }
@@ -120,24 +158,26 @@ commit_subm() {
 
 setmode
 cd -P $(git rev-parse --show-toplevel)
+msg "Checking uncommitted changes"
 git status --porcelain | grep -v '^??' | grep -q '^[^\s]*' || exit 0
 run git branch "$BNAME"
 run git stash push -m "$BNAME"
+msg "Pulling fresh commits from the upstream"
 run git pull --rebase
 run git stash apply
 if test "$RECURSIVE" = "y" ; then
   for s in `git submodule status | awk '{print $2}'` ; do
-    echo "Entering \"$s\""
+    msg "Visiting submodule \"$s\""
     ( cd -P "$s" && INDENT="$INDENT  " $0 "$@" ; )
-    echo "Exiting \"$s\""
   done
   mapchanges filter_subm commit_subm
 fi
 
 mapchanges filter_normal commit_normal
 
+msg "Pushing the changes upstream"
 run git push
 run git branch --delete "$BNAME"
 run git stash drop
-
+msg "Done"
 
