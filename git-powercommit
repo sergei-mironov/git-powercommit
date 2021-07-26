@@ -13,10 +13,11 @@ BNAME=powercommit
 RECURSIVE=`echo "$@" | grep -q -E '\-\-no-recursive' && echo n || echo y`
 DRYRUN=`echo "$@" | grep -q -E '\-\-dry-run' && echo y || echo n`
 SHOWHELP=`echo "$@" | grep -q -E '\-h|--help' && echo y || echo n`
-SHOWHELP=`echo "$@" | grep -q -E '\-d|--debug' && echo y || echo n`
+DEBUG=`echo "$@" | grep -q -E '\--debug' && echo y || echo n`
+NODEBUG=`echo "$@" | grep -q -E '\--no-debug' && echo y || echo n`
 
 if test "$SHOWHELP" = "y" ; then
-  echo "Usage: $ME [-h|--help] [--dry-run] [--no-recursive]" >&2
+  echo "Usage: $ME [-h|--help] [--debug] [--dry-run] [--no-recursive]" >&2
   exit 1
 fi
 
@@ -24,9 +25,17 @@ if test -z "$INDENT" ; then
   INDENT=""
 fi
 
+setmode() {
+  if test "$NODEBUG" = "y" ; then
+    set -e +x
+  else
+    test "$DEBUG" = "y" && set -e -x || set -e
+  fi
+}
+
 run() {
   if test "$DRYRUN" = "y" ; then
-    echo "$INDENT$@"
+    echo "${INDENT}dry-run: $@"
   else
     "$@"
   fi
@@ -47,12 +56,12 @@ mapchanges() {(
   # that sort these paths and call `commiter` for every such path.
   #
   # FIXME: currently ignores failures in filter or commiter, if any.
-  set -e -x
+  setmode
   local filter="$1"
   local commiter="$2"
   git status --no-renames --porcelain=v2 | \
   while read N XY sub mH mI mW hH hI path ; do
-    echo "||| $N $XY $sub $mH $mI $mW $hH $hI $path" >&2
+    # echo "||| $N $XY $sub $mH $mI $mW $hH $hI $path" >&2
     $filter $N $XY $sub $mH $mI $mW $hH $hI "$path"
   done | \
   sort -u --reverse | \
@@ -109,7 +118,7 @@ commit_subm() {
           "git reset --hard \"$BNAME\"; git stash pop;" \
           "git branch -D \"$BNAME\""
 
-set -ex
+setmode
 cd -P $(git rev-parse --show-toplevel)
 git status --porcelain | grep -v '^??' | grep -q '^[^\s]*' || exit 0
 run git branch "$BNAME"
