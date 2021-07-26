@@ -64,7 +64,7 @@ powercommit() {(
   set -e -x
   cd -P "$TD/$1"
   shift
-  git powercommit "$@"
+  git powercommit --no-debug "$@"
 )}
 
 test1() {(
