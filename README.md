@@ -36,5 +36,13 @@ Usage
 3. `git powercommit --dry-run`
 4. `git powercommit`
 
-Also it is recommended to clone this whole repo and call the [test](./test.sh)
-script to check the script on mock repos.
+If something goes wrong
+-----------------------
+
+As one of its first steps, powercommit script pins the current state of the repo with the `powercommit` branch. On the tip of this branch, it creates the stash capturing the currently modified files. If the automation magic fails for some reason, you are advised to recover the starting state manually by using the following commands:
+
+5. `git reset --hard "powercommit"; git stash pop; git branch -D "powercommit"`
+
+You may need to repeat the above sequence for all submodules. The script will refuse to run if the `powercommit` branch already exists.
+
+Also it is recommended to run the [test](./test.sh) script to check the script compatibility on mock repos.
