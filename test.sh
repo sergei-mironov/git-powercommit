@@ -64,7 +64,7 @@ powercommit() {(
   set -e -x
   cd -P "$TD/$1"
   shift
-  git powercommit --no-debug "$@"
+  git powercommit "$@"
 )}
 
 test1() {(
@@ -109,9 +109,23 @@ test2() {(
   git log --oneline | grep 'Bump'
 )}
 
+test_log() {(
+  set -e -x
+  export TD="$TROOT/test_log"
+  mkdir -p "$TD"
+  mkrepo repo1
+  mkrepoS repo1 sub1 modules/sub1
+  modify repo1 'lvl1/file1'
+  modify repo1 'modules/sub1/lvl1/file1'
+  cd -P "$TD/repo1"
+  powercommit repo1 --debug --log=$TD/powercommit.log
+  test 2 = `cat $TD/powercommit.log | grep '^Checking the status' | wc -l`
+)}
+
 set -e -x
 rm -rf "$TROOT" || true
 
 test1
 test2
+test_log
 echo OK
