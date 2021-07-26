@@ -6,6 +6,9 @@ errexit() {
 }
 
 msg() {
+  if test "$LOGFILE" != '-' ; then
+    echo "$@"
+  fi
   echo "$@" >&2
 }
 
@@ -17,7 +20,8 @@ BNAME=powercommit
 DRYRUN=n
 DEBUG=n
 NODEBUG=n
-opts=$(getopt -o ':h' -l "no-recursive,dry-run,help,debug,log:" -- "$@")
+RECURSIVE=y
+opts=$(getopt -o ':h' -l "no-recursive,dry-run,help,debug,no-debug,log:" -- "$@")
 if test "$?" != "0" ; then
   echo "Invalid options passed" >&2
   SHOWHELP=y
@@ -31,6 +35,7 @@ else
       --dry-run) DRYRUN=y ;;
       --debug) DEBUG=y ;;
       --no-debug) NODEBUG=y ;;
+      --no-recursive) RECURSIVE=n ;;
       *) echo "Unknown option $1" >&2; SHOWHELP=y ;;
     esac
     shift
@@ -45,16 +50,16 @@ fi
 
 if test -n "$LOGFILE" ; then
   if test "$LOGFILE" != "-" ; then
+    exec 2>>"$LOGFILE"
     msg "Logging to \"$LOGFILE\""
-    exec >>"$LOGFILE"
   else
     msg "Logging to stdout"
   fi
 else
   LOGDIR=`test -d "$TMPDIR" && echo $TMPDIR || echo /tmp`
   LOGFILE="$LOGDIR/git_powercommit_$UID.log"
+  exec 2>>"$LOGFILE"
   msg "Logging to \"$LOGFILE\""
-  exec >>"$LOGFILE"
 fi
 
 if test -z "$INDENT" ; then
@@ -157,14 +162,15 @@ commit_subm() {
           "git branch -D \"$BNAME\""
 
 setmode
-cd -P $(git rev-parse --show-toplevel)
-msg "Checking uncommitted changes"
+RROOT=$(git rev-parse --show-toplevel)
+cd -P "$RROOT"
+msg "Checking the status of \"$RROOT\""
 git status --porcelain | grep -v '^??' | grep -q '^[^\s]*' || exit 0
 run git branch "$BNAME"
 run git stash push -m "$BNAME"
 msg "Pulling fresh commits from the upstream"
 run git pull --rebase
-run git stash apply
+run git stash apply || true # Could be empty
 if test "$RECURSIVE" = "y" ; then
   for s in `git submodule status | awk '{print $2}'` ; do
     msg "Visiting submodule \"$s\""
@@ -178,6 +184,6 @@ mapchanges filter_normal commit_normal
 msg "Pushing the changes upstream"
 run git push
 run git branch --delete "$BNAME"
-run git stash drop
+run git stash drop || true # Could be empty
 msg "Done"
 
