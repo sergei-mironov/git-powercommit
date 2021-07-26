@@ -73,7 +73,7 @@ run() {
   if test "$DRYRUN" = "y" ; then
     echo "${INDENT}dry-run: $@"
   else
-    "$@"
+    "$@" 2>&1
   fi
 }
 
