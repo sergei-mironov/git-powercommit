@@ -8,9 +8,18 @@ errexit() {
 which git 2>&1 >/dev/null || \
   errexit "\`git\` is not installed"
 
+ME=`basename $0`
 BNAME=powercommit
 RECURSIVE=`echo "$@" | grep -q -E '\-\-no-recursive' && echo n || echo y`
 DRYRUN=`echo "$@" | grep -q -E '\-\-dry-run' && echo y || echo n`
+SHOWHELP=`echo "$@" | grep -q -E '\-h|--help' && echo y || echo n`
+SHOWHELP=`echo "$@" | grep -q -E '\-d|--debug' && echo y || echo n`
+
+if test "$SHOWHELP" = "y" ; then
+  echo "Usage: $ME [-h|--help] [--dry-run] [--no-recursive]" >&2
+  exit 1
+fi
+
 if test -z "$INDENT" ; then
   INDENT=""
 fi
