@@ -95,11 +95,10 @@ dirname2() {
 mapchanges() {(
   # Scan git repo, call a `filter` to calculate the paths of interest. After
   # that sort these paths and call `commiter` for every such path.
-  #
-  # FIXME: currently ignores failures in filter or commiter, if any.
   setmode
   local filter="$1"
   local commiter="$2"
+  export FAILPATH=`mktemp git-powercommit-$$-XXXXX`
   git status --no-renames --porcelain=v2 | \
   while read N XY sub mH mI mW hH hI path ; do
     # echo "||| $N $XY $sub $mH $mI $mW $hH $hI $path" >&2
@@ -107,8 +106,13 @@ mapchanges() {(
   done | \
   sort -u --reverse | \
   while read path; do
-    $commiter "$path"
+    $commiter "$path" || echo "$path" >> "$FAILPATH"
   done
+  if test -s "$FAILPATH" ; then
+    rm "$FAILPATH";
+    exit 1
+  fi
+  rm "$FAILPATH";
 )}
 
 filter_normal() {
