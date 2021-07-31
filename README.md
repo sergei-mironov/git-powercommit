@@ -57,7 +57,7 @@ compatibility on mock repos.
 TODO
 ----
 
-* [v] Hide verbose logging into the logfile.
+* [x] Hide verbose logging into the logfile.
 * [ ] Nix-expression.
 * [ ] Manpage.
 * [ ] Commit added/removed files as well, if specified from the command line.
