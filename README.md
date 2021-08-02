@@ -63,4 +63,8 @@ TODO
 * [ ] Commit added/removed files as well, if specified from the command line.
 * [ ] Use neural network to generate commit messages.
 
+Related links
+-------------
+
+* StackOverflow on generating commit messages https://stackoverflow.com/questions/35010953/how-to-automatically-generate-commit-message
 
