@@ -39,7 +39,7 @@ which git 2>&1 >/dev/null || \
 ME=`basename $0`
 BNAME=powercommit
 DRYRUN=n
-DEBUG=n
+DEBUG=y
 NODEBUG=n
 RECURSIVE=y
 opts=$(getopt -o ':h' -l "no-recursive,dry-run,help,debug,no-debug,log:" -- "$@")
