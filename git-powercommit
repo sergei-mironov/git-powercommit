@@ -1,15 +1,36 @@
 #!/bin/sh
 
-errexit() {
-  echo "$@" >&2
-  exit 1
-}
+if test -z "$GPC_WORKER" ; then
+  export CLR_RED=`tput setaf 1`
+  export CLR_GREEN=`tput setaf 2`
+  export CLR_BLUE=`tput setaf 4`
+  export CLR_RESET=`tput sgr0`
+fi
 
 msg() {
   if test "$LOGFILE" != '-' ; then
     echo "$@"
   fi
   echo "$@" >&2
+}
+
+clrmsg() {
+  clr="$1" ; shift
+  if test "$LOGFILE" != '-' ; then
+    echo "${clr}$@${CLR_RESET}"
+  fi
+  echo "$@" >&2
+}
+
+monmsg() {
+  if test -z "$GPC_WORKER" ; then
+    clrmsg "$CLR_BLUE" "$@"
+  fi
+}
+
+errexit() {
+  clrmsg "$CLR_RED" "$@"
+  exit 1
 }
 
 which git 2>&1 >/dev/null || \
@@ -51,15 +72,15 @@ fi
 if test -n "$LOGFILE" ; then
   if test "$LOGFILE" != "-" ; then
     exec 2>>"$LOGFILE"
-    msg "Logging to \"$LOGFILE\""
+    monmsg "Logging to \"$LOGFILE\""
   else
-    msg "Logging to stdout"
+    monmsg "Logging to stdout"
   fi
 else
   LOGDIR=`test -d "$TMPDIR" && echo $TMPDIR || echo /tmp`
   LOGFILE="$LOGDIR/git_powercommit_$UID.log"
   exec 2>>"$LOGFILE"
-  msg "Logging to \"$LOGFILE\""
+  monmsg "Logging to \"$LOGFILE\""
 fi
 
 if test -z "$INDENT" ; then
@@ -157,13 +178,24 @@ commit_subm() {
   run git commit -m "Bump $path"
 }
 
+if test -z "$GPC_WORKER" ; then
+  GPC_WORKER=y "$0" "$@"
+  ret="$?"
+  if test "$ret" = "0" ; then
+    exit 0
+  else
+    errexit "Abnormal termination"
+  fi
+fi
+
 { git branch -a; git stash list; } | grep -q "$BNAME" && \
   errexit "Looks like the last call to powercommit failed." \
           "Consider making some investigation, then remove the branch" \
-          "\`$BANME\` and the stash of the same name. Typical repair " \
+          "\`$BNAME\` and the stash of the same name. Typical repair " \
           "commands are:" $'\n\n\t' \
           "git reset --hard \"$BNAME\"; git stash pop;" \
-          "git branch -D \"$BNAME\""
+          "git branch -D \"$BNAME\"" \
+          $'\n'
 
 setmode
 RROOT=$(git rev-parse --show-toplevel)
