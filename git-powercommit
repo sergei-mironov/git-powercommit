@@ -221,5 +221,5 @@ msg "Pushing the changes upstream"
 run git push
 run git branch --delete "$BNAME"
 run git stash drop || true # Could be empty
-msg "Done"
+clrmsg "$CLR_GREEN" "Done"
 
