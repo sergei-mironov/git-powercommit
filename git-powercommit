@@ -194,8 +194,7 @@ fi
           "\`$BNAME\` and the stash of the same name. Typical repair " \
           "commands are:" $'\n\n\t' \
           "git reset --hard \"$BNAME\"; git stash pop;" \
-          "git branch -D \"$BNAME\"" \
-          $'\n'
+          "git branch -D \"$BNAME\"" $'\n'
 
 setmode
 RROOT=$(git rev-parse --show-toplevel)
