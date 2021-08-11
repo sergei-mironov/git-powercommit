@@ -38,7 +38,6 @@ mkrepo() {(
   git branch --set-upstream-to=origin/master
 )}
 
-
 mkrepoS() {(
   set -e -x
   local base=$1
@@ -51,6 +50,17 @@ mkrepoS() {(
   mkdir -p $(dirname "$path")
   git submodule add "$TD/$subm.git" "$path"
   git commit -m "Add submodule $subm"
+  git push
+)}
+
+clone() {(
+  set -e -x
+  local base=$1
+  local copy=$2
+  test -d "$TD"
+
+  cd -P "$TD"
+  git clone --recursive "$base" "$copy"
 )}
 
 modify() {(
@@ -122,10 +132,32 @@ test_log() {(
   test 2 = `cat $TD/powercommit.log | grep '^Checking the status' | wc -l`
 )}
 
+test_detached_head() {(
+  set -e -x
+  export TD="$TROOT/test_detached_head"
+  mkdir -p "$TD"
+  mkrepo repo1
+  mkrepoS repo1 sub1 modules/sub1
+  modify sub1 'lvl1/file1'
+  (cd "$TD/sub1" && git add --all && git commit -m 'Modified' && git push origin; )
+  clone repo1.git repo1c
+  # (cd "$TD/repo1c/modules/sub1" && git pull ;)
+  # (cd "$TD/repo1c" && git add modules/sub1 && git commit -m 'Bump' && git push ;)
+
+  # git pull --rebase
+  modify repo1c 'lvl1/file1'
+  powercommit repo1c && exit 1 || ( echo "(Intended failure!)" && true)
+  (cd "$TD/repo1c/modules/sub1" && git checkout master ; )
+  powercommit repo1c
+)}
+
+
 set -e -x
 rm -rf "$TROOT" || true
 
 test1
 test2
 test_log
+test_detached_head
 echo OK
+
