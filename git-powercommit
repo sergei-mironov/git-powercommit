@@ -83,8 +83,8 @@ else
   monmsg "Logging to \"$LOGFILE\""
 fi
 
-if test -z "$INDENT" ; then
-  INDENT=""
+if test -z "$GPC_INDENT" ; then
+  GPC_INDENT=""
 fi
 
 setmode() {
@@ -97,7 +97,7 @@ setmode() {
 
 run() {
   if test "$DRYRUN" = "y" ; then
-    echo "${INDENT}dry-run: $@"
+    echo "${GPC_INDENT}dry-run: $@"
   else
     "$@" 1>&2
   fi
@@ -209,8 +209,8 @@ run git pull --rebase
 run git stash apply || true # Could be empty
 if test "$RECURSIVE" = "y" ; then
   for s in `git submodule status | awk '{print $2}'` ; do
-    msg "Visiting submodule \"$s\""
-    ( cd -P "$s" && INDENT="$INDENT  " $0 "$@" ; )
+    clrmsg "$CLR_BLUE" "Visiting submodule \"$s\""
+    ( cd -P "$s" && GPC_INDENT="$GPC_INDENT  " $0 "$@" ; )
   done
   mapchanges filter_subm commit_subm
 fi
