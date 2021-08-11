@@ -46,6 +46,7 @@ reason, you are advised to recover the starting state manually by using the
 following commands:
 
 5. `git reset --hard "powercommit"; git stash pop; git branch -D "powercommit"`
+6. Review the log. By default it is located in `/tmp/git_powercommit_$UID.log`
 
 You may need to repeat the above sequence for all submodules. The script will
 refuse to run if the `powercommit` branch already exists.
@@ -63,9 +64,11 @@ TODO
 * [ ] Commit added/removed files as well, if specified from the command line.
 * [ ] Use neural network to generate commit messages.
 
+
 Related links
 -------------
 
+* ANSI color codes in terminal https://stackoverflow.com/questions/5947742/how-to-change-the-output-color-of-echo-in-linux
 * StackOverflow on generating commit messages https://stackoverflow.com/questions/35010953/how-to-automatically-generate-commit-message
 * PwC: On the Evaluation of Commit Message Generation Models: An Experimental Study https://paperswithcode.com/paper/on-the-evaluation-of-commit-message/review/
 
