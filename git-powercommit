@@ -179,7 +179,7 @@ commit_subm() {
 }
 
 if test -z "$GPC_WORKER" ; then
-  monmsg $(date)
+  echo "$(LANG=C date)" >&2
   GPC_WORKER=y "$0" "$@"
   ret="$?"
   if test "$ret" = "0" ; then
