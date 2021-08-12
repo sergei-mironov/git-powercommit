@@ -204,9 +204,12 @@ fi
 
 if test "$RECURSIVE" = "y" ; then
   for s in `git submodule status | awk '{print $2}'` ; do
-    ( cd -P "$s" && git symbolic-ref -q HEAD ; ) || \
+    ( cd -P "$s" && \
+      git status --porcelain | grep -v '^??' | grep -q '^[^\s]*' || exit 0 && \
+      git symbolic-ref -q HEAD >/dev/null ; ) || \
       errexit "Submodule \"$s\" is in the detached HEAD state so \"git" \
-        "push\" will fail. Please checkout it to the correct branch." \
+        "push\" will fail. Please checkout it to the correct branch:" $'\n\n\t' \
+        "git branch -f branch HEAD && git checkout master" $'\n\n' \
         "Consider using \`git submodule update --rebase\` or \`... --merge\`" \
         "in future." $'\n'
   done
