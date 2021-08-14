@@ -9,17 +9,17 @@ fi
 
 msg() {
   if test "$LOGFILE" != '-' ; then
-    echo "$@"
+    echo "$GPC_INDENT$@"
   fi
-  echo "$@" >&2
+  echo "$GPC_INDENT$@" >&2
 }
 
 clrmsg() {
   clr="$1" ; shift
   if test "$LOGFILE" != '-' ; then
-    echo "${clr}$@${CLR_RESET}"
+    echo "$GPC_INDENT${clr}$@${CLR_RESET}"
   fi
-  echo "$@" >&2
+  echo "$GPC_INDENT$@" >&2
 }
 
 monmsg() {
@@ -233,6 +233,7 @@ if test "$RECURSIVE" = "y" ; then
   mapchanges filter_subm commit_subm
 fi
 
+clrmsg "$CLR_BLUE" "Commiting local changes"
 mapchanges filter_normal commit_normal
 
 msg "Pushing the changes upstream"
