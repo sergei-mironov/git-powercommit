@@ -33,12 +33,21 @@ errexit() {
   exit 1
 }
 
+BNAME=powercommit
+recoverexit() {
+  errexit $'\n'"Looks like the previous call to git-powercommit failed." \
+          "Consider making some investigation, then remove the branch" \
+          "\`$BNAME\` and the stash of the same name. Typical repair" \
+          "commands are:" $'\n\n\t' \
+          "git reset --hard \"$BNAME\"; git stash pop;" \
+          "git branch -D \"$BNAME\"" $'\n'
+}
+
 which git 2>&1 >/dev/null || \
   errexit "\`git\` is not installed"
 
 ME=`basename $0`
 GPC="$(cd -P $(dirname $0) && pwd)/$ME"
-BNAME=powercommit
 DRYRUN=n
 DEBUG=y
 NODEBUG=n
@@ -185,6 +194,7 @@ if test -z "$GPC_WORKER" ; then
     echo "Starting git-powercommit, $(LANG=C date)"
     echo "============================================================"
   } >&2
+  trap "recoverexit" SIGINT
   GPC_WORKER=y "$GPC" "$@"
   ret="$?"
   if test "$ret" = "0" ; then
@@ -195,12 +205,7 @@ if test -z "$GPC_WORKER" ; then
 fi
 
 { git branch -a; git stash list; } | grep -q "$BNAME" && \
-  errexit "Looks like the last call to powercommit failed." \
-          "Consider making some investigation, then remove the branch" \
-          "\`$BNAME\` and the stash of the same name. Typical repair" \
-          "commands are:" $'\n\n\t' \
-          "git reset --hard \"$BNAME\"; git stash pop;" \
-          "git branch -D \"$BNAME\"" $'\n'
+  recoverexit
 
 if test "$RECURSIVE" = "y" ; then
   for s in `git submodule status | awk '{print $2}'` ; do
