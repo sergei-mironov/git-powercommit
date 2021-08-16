@@ -74,7 +74,7 @@ powercommit() {(
   set -e -x
   cd -P "$TD/$1"
   shift
-  git powercommit "$@"
+  git powercommit "$@" --debug --log=$TD/powercommit.log
 )}
 
 test1() {(
@@ -129,7 +129,8 @@ test_log() {(
   modify repo1 'modules/sub1/lvl1/file1'
   cd -P "$TD/repo1"
   powercommit repo1 --debug --log=$TD/powercommit.log
-  test 2 = `cat $TD/powercommit.log | grep '^Checking the status' | wc -l`
+  cat $TD/powercommit.log | grep '^Checking the status'
+  cat $TD/powercommit.log | grep '^  Checking the status'
 )}
 
 test_detached_head() {(
@@ -146,6 +147,7 @@ test_detached_head() {(
 
   # git pull --rebase
   modify repo1c 'lvl1/file1'
+  modify repo1c 'modules/sub1/file2'
   powercommit repo1c && exit 1 || ( echo "(Intended failure!)" && true)
   (cd "$TD/repo1c/modules/sub1" && git checkout master ; )
   powercommit repo1c
