@@ -93,6 +93,8 @@ else
   monmsg "Logging to \"$LOGFILE\""
 fi
 
+echo "Opts: $@" >&2
+
 if test -z "$GPC_INDENT" ; then
   GPC_INDENT=""
 fi
