@@ -159,17 +159,36 @@ test_untracked() {(
   export TD="$TROOT/test_untracked"
   mkdir -p "$TD"
   mkrepo repo1
+  mkrepoS repo1 sub1 modules/sub1
   cd -P "$TD/repo1"
   echo Foo>fileA
+  echo Bar>$TD/repo1/modules/sub1/fileB
   modify repo1 'lvl1/file1'
+  modify repo1 'modules/sub1/lvl1/file1'
   powercommit repo1 --debug
   cat $TD/powercommit.log | grep "Untracked fileA"
+  cat $TD/powercommit.log | grep "Untracked modules/sub1/fileB"
 )}
 
+test_screencap() {(
+  set -e -x
+  export TD="$TROOT/test_screencap"
+  mkdir -p "$TD"
+  mkrepo repo1
+  mkrepoS repo1 sub1 modules/sub1
+  mkrepoS repo1 sub2 modules/sub2
+
+  modify repo1 'lvl1/file1'
+  modify repo1 'modules/sub1/lvl1/file1'
+  modify repo1 'modules/sub2/lvl1/file1'
+  echo Foo>$TD/repo1/fileA
+  echo Bar>$TD/repo1/modules/sub1/fileB
+)}
 
 set -e -x
 rm -rf "$TROOT" || true
 
+# test_screencap
 test1
 test2
 test_log
