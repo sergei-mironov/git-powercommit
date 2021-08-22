@@ -7,8 +7,6 @@ repository. The script uses meaningless commit messages, performs pulls/stashes
 as required and supports git submodules. Thus we try to automate a typical work
 scenario of a lazy developer.
 
-<img src="Screencast.gif" alt="Screencast" width="200"/>
-
 **Disclamer: the Author tried to make this script clean and simple and even
 provided a [test](./test.sh). But you know, Git is a complex thing, something
 may not work as expected. Use this script at your own risk.**
@@ -38,6 +36,8 @@ Usage
 2. `cd your-git-repo`
 3. Make some changes
 4. `git powercommit`
+
+<img src="Screencast.gif" alt="Screencast" width="400"/>
 
 
 If something goes wrong
