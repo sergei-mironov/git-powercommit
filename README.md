@@ -7,6 +7,8 @@ repository. The script uses meaningless commit messages, performs pulls/stashes
 as required and supports git submodules. Thus we try to automate a typical work
 scenario of a lazy developer.
 
+[!](./Screencast.gif)
+
 **Disclamer: the Author tried to make this script clean and simple and even
 provided a [test](./test.sh). But you know, Git is a complex thing, something
 may not work as expected. Use this script at your own risk.**
