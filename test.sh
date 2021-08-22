@@ -75,7 +75,7 @@ powercommit() {(
   set -e -x
   cd -P "$TD/$1"
   shift
-  git powercommit "$@" --debug --log=$TD/powercommit.log
+  git powercommit --debug --log=$TD/powercommit.log "$@"
 )}
 
 test1() {(
