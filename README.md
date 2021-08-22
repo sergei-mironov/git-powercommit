@@ -51,8 +51,8 @@ manually:
 
 5. As one of its first steps, powercommit script pins the current state of the
    repo with the `powercommit` branch. On the tip of this branch, it creates the
-   stash capturing the currently modified files. Here is how to undergo all the
-   changes:
+   stash capturing the currently modified files. Here is how to revert repo to
+   the state just before `git powercommit` was called:
     ```sh
     git reset --hard "powercommit"; git stash pop; git branch -D "powercommit"
     ```
