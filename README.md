@@ -73,7 +73,7 @@ TODO
 * [x] Screencast.
 * [ ] A recursive dry-run mode fo execution.
 * [ ] Commit added/removed files based on patterns.
-* [ ] Abort command recovering from failures.
+* [ ] Make recovering from failures simpler and recursive.
 * [ ] A Manpage.
 * [ ] Neural network generating commit messages :pig:
 
