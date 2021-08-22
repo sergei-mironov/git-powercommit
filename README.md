@@ -73,6 +73,7 @@ TODO
 Related links
 -------------
 
+* Git statutus porcelain v2 https://git-scm.com/docs/git-status#_porcelain_format_version_2
 * ANSI color codes in terminal https://stackoverflow.com/questions/5947742/how-to-change-the-output-color-of-echo-in-linux
 * StackOverflow on generating commit messages https://stackoverflow.com/questions/35010953/how-to-automatically-generate-commit-message
 * PwC: On the Evaluation of Commit Message Generation Models: An Experimental Study https://paperswithcode.com/paper/on-the-evaluation-of-commit-message/review/
