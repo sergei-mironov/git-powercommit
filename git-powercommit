@@ -69,6 +69,7 @@ else
       --debug) DEBUG=y ;;
       --no-debug) NODEBUG=y ;;
       --no-recursive) RECURSIVE=n ;;
+      -h|--help) SHOWHELP=y ;;
       *) echo "Unknown option $1" >&2; SHOWHELP=y ;;
     esac
     shift
