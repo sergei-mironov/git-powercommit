@@ -68,7 +68,7 @@ TODO
 
 * [x] Hide verbose logging into the logfile.
 * [x] Nix-expression.
-* [ ] Screencap.
+* [x] Screencast.
 * [ ] A recursive dry-run mode fo execution.
 * [ ] Commit added/removed files based on patterns.
 * [ ] Abort command recovering from failures.
