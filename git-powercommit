@@ -200,7 +200,7 @@ filter_untracked() {
 commit_untracked() {
   local path="$1"
   if test -f "$GPC_UNTRACKED"; then
-    echo $path >> "$GPC_UNTRACKED"
+    echo $(git rev-parse --show-toplevel)/$path >> "$GPC_UNTRACKED"
   fi
 }
 
@@ -238,16 +238,18 @@ if test -z "$GPC_WORKER" ; then
   if test "$ret" != "0" ; then
     errexit "Abnormal termination"
   fi
+  # Report the untracked files
   setmode
   n=0
   for path in $(cat $UNTRACKED); do
     desc=$(LANG=C file $path | awk -F ': ' '{print $2}')
     if echo "$desc" | grep -q -i -E 'source|text|script' ; then
-      clrmsg "$CLR_PINK" "Untracked $path: $desc"
+      RP=$(realpath --relative-to="`pwd`" "$path")
+      clrmsg "$CLR_PINK" "Untracked $RP : $desc"
     fi
     n=$(expr "$n" + 1)
   done
-  msg "$n untracked files"
+  msg "Total $n untracked files"
   rm "$UNTRACKED"
   clrmsg "$CLR_GREEN" "Done"
 else
