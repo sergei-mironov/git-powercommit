@@ -45,12 +45,11 @@ Usage
 If something goes wrong
 -----------------------
 
-If the automation magic fails for some
-reason, you are advised to recover to the starting state manually by using the
-following commands:
+If the automation magic fails for some reason, you are advised to review the
+`/tmp/git_powercommit_$UID.log` logfile and recover to the starting state
+manually:
 
-5. Review the log. By default it is located in `/tmp/git_powercommit_$UID.log`
-6. As one of its first steps, powercommit script pins the current state of the
+5. As one of its first steps, powercommit script pins the current state of the
    repo with the `powercommit` branch. On the tip of this branch, it creates the
    stash capturing the currently modified files. Here is how to undergo all the
    changes:
@@ -58,8 +57,9 @@ following commands:
     git reset --hard "powercommit"; git stash pop; git branch -D "powercommit"
     ```
 
-You may need to repeat the above sequence for all submodules. The script will
-refuse to run if the `powercommit` branch already exists.
+You may need to repeat the above sequence for all submodules (recusrive abort is
+still in the TODO list). The script will refuse to run if the `powercommit`
+branch already exists.
 
 Also it is recommended to run the [test](./test.sh) script to check the script
 compatibility on mock repos.
@@ -74,7 +74,7 @@ TODO
 * [ ] A recursive dry-run mode fo execution.
 * [ ] Commit added/removed files based on patterns.
 * [ ] Abort command recovering from failures.
-* [ ] Manpage.
+* [ ] A Manpage.
 * [ ] Neural network generating commit messages.
 
 
