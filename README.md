@@ -75,7 +75,7 @@ TODO
 * [ ] Commit added/removed files based on patterns.
 * [ ] Abort command recovering from failures.
 * [ ] A Manpage.
-* [ ] Neural network generating commit messages.
+* [ ] Neural network generating commit messages :pig:
 
 
 Related links
