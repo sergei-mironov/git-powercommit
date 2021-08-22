@@ -70,7 +70,7 @@ TODO
 
 * [x] Hide verbose logging into the logfile.
 * [x] Nix-expression.
-* [x] Screencast.
+* [x] A Screencast.
 * [ ] A recursive dry-run mode fo execution.
 * [ ] Commit added/removed files based on patterns.
 * [ ] Make recovering from failures simpler and recursive.
