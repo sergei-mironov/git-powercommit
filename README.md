@@ -11,7 +11,7 @@ scenario of a lazy developer.
 provided a [test](./test.sh). But you know, Git is a complex thing, something
 may not work as expected. Use this script at your own risk.**
 
-The script's algorithm in a nutshell:
+The Powercommit algorithm in a nutshell:
 
 1. Check for changes, exit if there are none.
 2. Mark the current head with a branch `powercommit`. Exit if the branch already
