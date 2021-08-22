@@ -231,6 +231,7 @@ if test -z "$GPC_WORKER" ; then
   } >&2
   UNTRACKED=$(mktemp -t git_powercommit_$$_XXXXX.txt)
   trap "recoverexit" SIGINT
+  GPC_CWD="`pwd`" \
   GPC_WORKER=y \
   GPC_UNTRACKED=$UNTRACKED \
     "$GPC" "$@"
@@ -273,7 +274,8 @@ else
   setmode
   RROOT=$(git rev-parse --show-toplevel)
   cd -P "$RROOT"
-  msg "Checking the status of \"$RROOT\""
+  RELROOT=$(realpath --relative-to="$GPC_CWD/.." "$RROOT")
+  msg "Checking the status of \"$RELROOT\""
   git status --porcelain | grep -v '^??' | grep -q '^[^\s]*' || exit 0
   run git branch "$BNAME"
   run git stash push -m "$BNAME"
