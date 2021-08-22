@@ -238,14 +238,16 @@ if test -z "$GPC_WORKER" ; then
   if test "$ret" != "0" ; then
     errexit "Abnormal termination"
   fi
+  setmode
+  n=0
   for path in $(cat $UNTRACKED); do
     desc=$(LANG=C file $path | awk -F ': ' '{print $2}')
-    if echo "$desc" | grep -q -E 'source|text|script' ; then
+    if echo "$desc" | grep -q -i -E 'source|text|script' ; then
       clrmsg "$CLR_PINK" "Untracked $path: $desc"
-    else
-      msg "Untracked $path"
     fi
+    n=$(expr "$n" + 1)
   done
+  msg "$n untracked files"
   rm "$UNTRACKED"
   clrmsg "$CLR_GREEN" "Done"
 else
