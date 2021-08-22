@@ -1,12 +1,14 @@
 #!/bin/sh
 
 if test -z "$GPC_WORKER" ; then
-  export CLR_RED=`tput setaf 1`
-  export CLR_GREEN=`tput setaf 2`
-  export CLR_BLUE=`tput setaf 4`
-  export CLR_RESET=`tput sgr0`
+  export CLR_RED=`tput setaf 1 || echo ""`
+  export CLR_GREEN=`tput setaf 2 || echo ""`
+  export CLR_BLUE=`tput setaf 4 || echo ""`
+  export CLR_RESET=`tput sgr0 || echo ""`
 fi
 
+# Logs go to stderr, which could be redirected to a file. User messages go to
+# stdout which is not normally redirected.
 msg() {
   if test "$LOGFILE" != '-' ; then
     echo "$GPC_INDENT$@"
