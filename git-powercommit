@@ -1,9 +1,14 @@
 #!/bin/sh
 
+# TODO: Filter handlers use stdout to report results, and stderr is redirected
+# to a logfile. One need to find the way for them to print messages to the
+# terminal.
+
 if test -z "$GPC_WORKER" ; then
   export CLR_RED=`tput setaf 1 || echo ""`
   export CLR_GREEN=`tput setaf 2 || echo ""`
   export CLR_BLUE=`tput setaf 4 || echo ""`
+  export CLR_PINK=`tput setaf 5 || echo ""`
   export CLR_RESET=`tput sgr0 || echo ""`
 fi
 
@@ -129,15 +134,15 @@ dirname2() {
 }
 
 mapchanges() {(
-  # Scan git repo, call a `filter` to calculate the paths of interest. After
+  # Scan git repo, call `filter` to calculate the paths of interest. After
   # that sort these paths and call `commiter` for every such path.
   setmode
   local filter="$1"
   local commiter="$2"
-  export FAILPATH=`mktemp git-powercommit-$$-XXXXX`
+  export FAILPATH=`mktemp -t git-powercommit-$$-XXXXX`
   git status --no-renames --porcelain=v2 | \
   while read N XY sub mH mI mW hH hI path ; do
-    # echo "||| $N $XY $sub $mH $mI $mW $hH $hI $path" >&2
+    echo "porcelain: $N $XY $sub $mH $mI $mW $hH $hI $path" >&2
     $filter $N $XY $sub $mH $mI $mW $hH $hI "$path"
   done | \
   sort -u --reverse | \
@@ -154,13 +159,20 @@ mapchanges() {(
 filter_normal() {
   # Inputs are according to `git status --porcelain=v2` spec. The function
   # filters normal changes, i.e. not renames and submodules
-  local XY="$2"
-  local subm="$3"
-  shift 8; local path="$1"
-  case "$XY" in
-    .M|M.|MM)
-      case "$subm" in
-        N...) dirname2 "$path" ;;
+  local N="$1"
+  case "$N" in
+    1)
+      local XY="$2"
+      local subm="$3"
+      shift 8; local path="$1"
+      case "$XY" in
+        # Modified
+        .M|M.|MM)
+          case "$subm" in
+            # Not a submodule
+            N...) dirname2 "$path" ;;
+            *) ;;
+          esac ;;
         *) ;;
       esac ;;
     *) ;;
@@ -173,6 +185,23 @@ commit_normal() {
   msg "Committing \"$path\""
   run git add -u -- "$path"
   run git commit -m "Update $path"
+}
+
+filter_untracked() {
+  local N="$1"
+  case "$N" in
+    \?)
+      shift 1; local path="$1"
+      echo "$path" ;;
+    *) ;;
+  esac
+}
+
+commit_untracked() {
+  local path="$1"
+  if test -f "$GPC_UNTRACKED"; then
+    echo $path >> "$GPC_UNTRACKED"
+  fi
 }
 
 filter_subm() {
@@ -194,61 +223,74 @@ commit_subm() {
 }
 
 if test -z "$GPC_WORKER" ; then
+  # Top-level part re-runs itself as a worker.
   { echo; echo
     echo "============================================================"
     echo "Starting git-powercommit, $(LANG=C date)"
     echo "============================================================"
   } >&2
+  UNTRACKED=$(mktemp -t git_powercommit_$$_XXXXX.txt)
   trap "recoverexit" SIGINT
-  GPC_WORKER=y "$GPC" "$@"
+  GPC_WORKER=y \
+  GPC_UNTRACKED=$UNTRACKED \
+    "$GPC" "$@"
   ret="$?"
-  if test "$ret" = "0" ; then
-    exit 0
-  else
+  if test "$ret" != "0" ; then
     errexit "Abnormal termination"
   fi
-fi
-
-{ git branch -a; git stash list; } | grep -q "$BNAME" && \
-  recoverexit
-
-if test "$RECURSIVE" = "y" ; then
-  for s in `git submodule status | awk '{print $2}'` ; do
-    ( cd -P "$s" && \
-      git status --porcelain | grep -v '^??' | grep -q '^[^\s]*' || exit 0 && \
-      git symbolic-ref -q HEAD >/dev/null ; ) || \
-      errexit "Submodule \"$s\" is in the detached HEAD state so \"git" \
-        "push\" will fail. Please checkout it to the correct branch:" $'\n\n\t' \
-        "git branch -f branch HEAD && git checkout master" $'\n\n' \
-        "Consider using \`git submodule update --rebase\` or \`... --merge\`" \
-        "in future." $'\n'
+  for path in $(cat $UNTRACKED); do
+    desc=$(LANG=C file $path | awk -F ': ' '{print $2}')
+    if echo "$desc" | grep -q -E 'source|text|script' ; then
+      clrmsg "$CLR_PINK" "Untracked $path: $desc"
+    else
+      msg "Untracked $path"
+    fi
   done
+  rm "$UNTRACKED"
+  clrmsg "$CLR_GREEN" "Done"
+else
+  # Worker part.
+  { git branch -a; git stash list; } | grep -q "$BNAME" && \
+    recoverexit
+
+  if test "$RECURSIVE" = "y" ; then
+    for s in `git submodule status | awk '{print $2}'` ; do
+      ( cd -P "$s" && \
+        git status --porcelain | grep -v '^??' | grep -q '^[^\s]*' || exit 0 && \
+        git symbolic-ref -q HEAD >/dev/null ; ) || \
+        errexit "Submodule \"$s\" is in the detached HEAD state so \"git" \
+          "push\" will fail. Please checkout it to the correct branch:" $'\n\n\t' \
+          "git branch -f branch HEAD && git checkout master" $'\n\n' \
+          "Consider using \`git submodule update --rebase\` or \`... --merge\`" \
+          "in future." $'\n'
+    done
+  fi
+
+  setmode
+  RROOT=$(git rev-parse --show-toplevel)
+  cd -P "$RROOT"
+  msg "Checking the status of \"$RROOT\""
+  git status --porcelain | grep -v '^??' | grep -q '^[^\s]*' || exit 0
+  run git branch "$BNAME"
+  run git stash push -m "$BNAME"
+  msg "Pulling fresh commits from the upstream"
+  run git pull --rebase
+  run git stash apply || true # Could be empty
+  if test "$RECURSIVE" = "y" ; then
+    for s in `git submodule status | awk '{print $2}'` ; do
+      clrmsg "$CLR_BLUE" "Visiting submodule \"$s\""
+      ( cd -P "$s" && GPC_INDENT="$GPC_INDENT  " $GPC "$@" ; )
+    done
+    mapchanges filter_subm commit_subm
+  fi
+
+  clrmsg "$CLR_BLUE" "Commiting local changes"
+  mapchanges filter_untracked commit_untracked
+  mapchanges filter_normal commit_normal
+
+  msg "Pushing the changes upstream"
+  run git push
+  run git branch --delete "$BNAME"
+  run git stash drop || true # Could be empty
 fi
-
-setmode
-RROOT=$(git rev-parse --show-toplevel)
-cd -P "$RROOT"
-msg "Checking the status of \"$RROOT\""
-git status --porcelain | grep -v '^??' | grep -q '^[^\s]*' || exit 0
-run git branch "$BNAME"
-run git stash push -m "$BNAME"
-msg "Pulling fresh commits from the upstream"
-run git pull --rebase
-run git stash apply || true # Could be empty
-if test "$RECURSIVE" = "y" ; then
-  for s in `git submodule status | awk '{print $2}'` ; do
-    clrmsg "$CLR_BLUE" "Visiting submodule \"$s\""
-    ( cd -P "$s" && GPC_INDENT="$GPC_INDENT  " $GPC "$@" ; )
-  done
-  mapchanges filter_subm commit_subm
-fi
-
-clrmsg "$CLR_BLUE" "Commiting local changes"
-mapchanges filter_normal commit_normal
-
-msg "Pushing the changes upstream"
-run git push
-run git branch --delete "$BNAME"
-run git stash drop || true # Could be empty
-clrmsg "$CLR_GREEN" "Done"
 
