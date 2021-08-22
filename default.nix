@@ -4,13 +4,14 @@
 , ncurses ? pkgs.ncurses
 , which ? pkgs.which
 , utillinux ? pkgs.utillinux
+, file ? pkgs.file
 , makeWrapper ? pkgs.makeWrapper }:
 
 stdenv.mkDerivation {
   name = "git-powercommit";
   src = ./.;
 
-  checkInputs = [ git ncurses which utillinux ];
+  checkInputs = [ git ncurses which utillinux file ];
   nativeBuildInputs = [ makeWrapper ];
 
   doCheck = true;
@@ -29,5 +30,6 @@ stdenv.mkDerivation {
       --prefix PATH : "${git}/bin" \
       --prefix PATH : "${ncurses}/bin" \
       --prefix PATH : "${utillinux}/bin" \
+      --prefix PATH : "${file}/bin" \
   '';
 }
