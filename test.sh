@@ -1,8 +1,9 @@
 #!/bin/sh
 
-CWD=$(cd $(dirname $0); pwd;)
+CWD=$(pwd)
 TROOT="$CWD/_tests"
-PATH=$CWD:$PATH
+PWD=$(cd $(dirname $0); pwd;)
+PATH=$PWD:$PATH
 
 mkrepo() {(
   set -e -x
