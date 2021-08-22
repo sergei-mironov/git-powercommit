@@ -26,6 +26,8 @@ The Powercommit algorithm in a nutshell:
    share a folder into a single commit.
 9. Push the repo upstream
 10. Remove the `powercommit` marker branch.
+11. Print a summary of untracked files. Highlight files which look like
+    source codes.
 
 
 Usage
