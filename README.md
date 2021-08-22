@@ -33,20 +33,24 @@ Usage
 1. Drop this [git-powercommit](./git-powercommit) script into one of your PATH
    folders.
 2. `cd your-git-repo`
-3. `git powercommit --dry-run`
+3. Make some changes
 4. `git powercommit`
 
 If something goes wrong
 -----------------------
 
-As one of its first steps, powercommit script pins the current state of the repo
-with the `powercommit` branch. On the tip of this branch, it creates the stash
-capturing the currently modified files. If the automation magic fails for some
-reason, you are advised to recover the starting state manually by using the
+If the automation magic fails for some
+reason, you are advised to recover to the starting state manually by using the
 following commands:
 
-5. `git reset --hard "powercommit"; git stash pop; git branch -D "powercommit"`
-6. Review the log. By default it is located in `/tmp/git_powercommit_$UID.log`
+5. Review the log. By default it is located in `/tmp/git_powercommit_$UID.log`
+6. As one of its first steps, powercommit script pins the current state of the
+   repo with the `powercommit` branch. On the tip of this branch, it creates the
+   stash capturing the currently modified files. Here is how to undergo all the
+   changes:
+    ```sh
+    git reset --hard "powercommit"; git stash pop; git branch -D "powercommit"
+    ```
 
 You may need to repeat the above sequence for all submodules. The script will
 refuse to run if the `powercommit` branch already exists.
@@ -59,10 +63,11 @@ TODO
 ----
 
 * [x] Hide verbose logging into the logfile.
-* [ ] Nix-expression.
-* [ ] Manpage.
+* [x] Nix-expression.
+* [ ] Screencap.
 * [ ] Commit added/removed files as well, if specified from the command line.
-* [ ] Use neural network to generate commit messages.
+* [ ] Manpage.
+* [ ] Neural network generating commit messages.
 
 
 Related links
