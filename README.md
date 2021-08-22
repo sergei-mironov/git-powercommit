@@ -27,6 +27,7 @@ The Powercommit algorithm in a nutshell:
 9. Push the repo upstream
 10. Remove the `powercommit` marker branch.
 
+
 Usage
 -----
 
@@ -35,6 +36,7 @@ Usage
 2. `cd your-git-repo`
 3. Make some changes
 4. `git powercommit`
+
 
 If something goes wrong
 -----------------------
@@ -65,7 +67,9 @@ TODO
 * [x] Hide verbose logging into the logfile.
 * [x] Nix-expression.
 * [ ] Screencap.
-* [ ] Commit added/removed files as well, if specified from the command line.
+* [ ] A recursive dry-run mode fo execution.
+* [ ] Commit added/removed files based on patterns.
+* [ ] Abort command recovering from failures.
 * [ ] Manpage.
 * [ ] Neural network generating commit messages.
 
