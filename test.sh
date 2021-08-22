@@ -129,9 +129,9 @@ test_log() {(
   modify repo1 'lvl1/file1'
   modify repo1 'modules/sub1/lvl1/file1'
   cd -P "$TD/repo1"
-  powercommit repo1 --debug --log=$TD/powercommit.log
-  cat $TD/powercommit.log | grep '^Checking the status'
-  cat $TD/powercommit.log | grep '^  Checking the status'
+  powercommit repo1 --debug --log=$TD/powercommit2.log
+  cat $TD/powercommit2.log | grep '^Checking the status'
+  cat $TD/powercommit2.log | grep '^  Checking the status'
 )}
 
 test_detached_head() {(
@@ -154,6 +154,17 @@ test_detached_head() {(
   powercommit repo1c
 )}
 
+test_untracked() {(
+  set -e -x
+  export TD="$TROOT/test_untracked"
+  mkdir -p "$TD"
+  mkrepo repo1
+  cd -P "$TD/repo1"
+  echo Foo>fileA
+  modify repo1 'lvl1/file1'
+  powercommit repo1 --debug
+)}
+
 
 set -e -x
 rm -rf "$TROOT" || true
@@ -162,5 +173,6 @@ test1
 test2
 test_log
 test_detached_head
+test_untracked
 echo OK
 
