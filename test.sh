@@ -163,6 +163,7 @@ test_untracked() {(
   echo Foo>fileA
   modify repo1 'lvl1/file1'
   powercommit repo1 --debug
+  cat $TD/powercommit.log | grep "Untracked fileA"
 )}
 
 
