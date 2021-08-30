@@ -1,5 +1,9 @@
 #!/bin/sh
 
+GPC_OK=0
+GPC_DURTY=1
+GPC_ERR=2
+
 # TODO: Filter handlers use stdout to report results, and stderr is redirected
 # to a logfile. One need to find the way for them to print messages to the
 # terminal.
@@ -15,7 +19,7 @@ fi
 # Logs go to stderr, which could be redirected to a file. User messages go to
 # stdout which is not normally redirected.
 msg() {
-  if test "$LOGFILE" != '-' ; then
+  if test "$LOGFILE" != '-' && test "$QUIET" = "n" ; then
     echo "$GPC_INDENT$@"
   fi
   echo "$GPC_INDENT$@" >&2
@@ -23,7 +27,7 @@ msg() {
 
 clrmsg() {
   clr="$1" ; shift
-  if test "$LOGFILE" != '-' ; then
+  if test "$LOGFILE" != '-' && test "$QUIET" = "n" ; then
     echo "$GPC_INDENT${clr}$@${CLR_RESET}"
   fi
   echo "$GPC_INDENT$@" >&2
@@ -37,7 +41,7 @@ monmsg() {
 
 errexit() {
   clrmsg "$CLR_RED" "$@"
-  exit 1
+  exit "$GPC_ERR"
 }
 
 BNAME=powercommit
@@ -59,7 +63,8 @@ DRYRUN=n
 DEBUG=y
 NODEBUG=n
 RECURSIVE=y
-opts=$(getopt -o ':h' -l "no-recursive,dry-run,help,debug,no-debug,log:" -- "$@")
+QUIET=n
+opts=$(getopt -o ':h' -l "no-recursive,dry-run,help,debug,no-debug,log:,quiet" -- "$@")
 if test "$?" != "0" ; then
   echo "Invalid options passed" >&2
   SHOWHELP=y
@@ -74,8 +79,9 @@ else
       --debug) DEBUG=y ;;
       --no-debug) NODEBUG=y ;;
       --no-recursive) RECURSIVE=n ;;
+      --quiet) QUIET=y ;;
       -h|--help) SHOWHELP=y ;;
-      *) echo "Unknown option $1" >&2; SHOWHELP=y ;;
+      *) msg "Unknown option $1"; SHOWHELP=y ;;
     esac
     shift
   done
@@ -83,8 +89,8 @@ else
 fi
 
 if test "$SHOWHELP" = "y" ; then
-  echo "Usage: $ME [-h|--help] [--debug] [--dry-run] [--no-recursive] [--log=-|FILE]" >&2
-  exit 1
+  msg "Usage: $ME [-h|--help] [--debug] [--dry-run] [--no-recursive] [--log=-|FILE]"
+  exit "$GPC_ERR"
 fi
 
 if test -n "$LOGFILE" ; then
@@ -117,7 +123,7 @@ setmode() {
 
 run() {
   if test "$DRYRUN" = "y" ; then
-    echo "${GPC_INDENT}dry-run: $@"
+    msg "${GPC_INDENT}dry-run: $@"
   else
     "$@" 1>&2
   fi
@@ -139,7 +145,7 @@ mapchanges() {(
   setmode
   local filter="$1"
   local commiter="$2"
-  export FAILPATH=`mktemp -t git-powercommit-$$-XXXXX`
+  export FAILPATH=$(mktemp -t git_pcmt_mapfailed_$$_XXXXX.txt)
   git status --no-renames --porcelain=v2 | \
   while read N XY sub mH mI mW hH hI path ; do
     echo "porcelain: $N $XY $sub $mH $mI $mW $hH $hI $path" >&2
@@ -151,7 +157,7 @@ mapchanges() {(
   done
   if test -s "$FAILPATH" ; then
     rm "$FAILPATH";
-    exit 1
+    exit "$GPC_ERR"
   fi
   rm "$FAILPATH";
 )}
@@ -183,6 +189,7 @@ commit_normal() {
   # Commit changes assuming that the path points to normal file/folder
   local path="$1"
   msg "Committing \"$path\""
+  echo $(git rev-parse --show-toplevel)/$path >> "$GPC_DESTRUCTIVE"
   run git add -u -- "$path"
   run git commit -m "Update $path"
 }
@@ -199,9 +206,8 @@ filter_untracked() {
 
 commit_untracked() {
   local path="$1"
-  if test -f "$GPC_UNTRACKED"; then
-    echo $(git rev-parse --show-toplevel)/$path >> "$GPC_UNTRACKED"
-  fi
+  echo $(git rev-parse --show-toplevel)/$path >> "$GPC_UNTRACKED"
+  echo $(git rev-parse --show-toplevel)/$path >> "$GPC_DESTRUCTIVE"
 }
 
 filter_subm() {
@@ -218,43 +224,73 @@ commit_subm() {
   # Commit changes assuming that the path points to a submodule
   local path="$1"
   msg "Committing submodule \"$path\""
+  echo $(git rev-parse --show-toplevel)/$path >> "$GPC_DESTRUCTIVE"
   run git add -u -- "$path"
   run git commit -m "Bump $path"
 }
 
 if test -z "$GPC_WORKER" ; then
-  # Top-level part re-runs itself as a worker.
+  # The top-level branch, re-runs the script later in "worker" mode.
+  if test "$DRYRUN" = "n" ; then
+    "$GPC" "$@" --dry-run --quiet
+    ret="$?"
+    case "$ret" in
+      "$GPC_OK")
+        clrmsg "$CLR_GREEN" "Nothing to do"
+        exit "$GPC_OK" ;;
+      "$GPC_DURTY") ;;
+      *)
+        errexit "Abnormal termination" ;;
+    esac
+  fi
   { echo; echo
     echo "============================================================"
-    echo "Starting git-powercommit, $(LANG=C date)"
+    echo "Starting git-powercommit, dry-run=$DRYRUN, $(LANG=C date)"
     echo "============================================================"
   } >&2
-  UNTRACKED=$(mktemp -t git_powercommit_$$_XXXXX.txt)
-  trap "recoverexit" SIGINT
+  UNTRACKED=$(mktemp -t git_pcmt_untracked_$$_XXXXX.txt)
+  DESTRUCTIVE=$(mktemp -t git_pcmt_destructive_$$_XXXXX.txt)
+  trap "rm $UNTRACKED $DESTRUCTIVE; recoverexit" SIGINT
+  trap "rm $UNTRACKED $DESTRUCTIVE" EXIT
   GPC_CWD="`pwd`" \
   GPC_WORKER=y \
   GPC_UNTRACKED=$UNTRACKED \
+  GPC_DESTRUCTIVE=$DESTRUCTIVE \
     "$GPC" "$@"
   ret="$?"
-  if test "$ret" != "0" ; then
-    errexit "Abnormal termination"
-  fi
-  # Report the untracked files
-  setmode
-  n=0
-  for path in $(cat $UNTRACKED); do
-    desc=$(LANG=C file $path | awk -F ': ' '{print $2}')
-    if echo "$desc" | grep -q -i -E 'source|text|script' ; then
-      RP=$(realpath --relative-to="`pwd`" "$path")
-      clrmsg "$CLR_PINK" "Untracked $RP : $desc"
-    fi
-    n=$(expr "$n" + 1)
-  done
-  msg "Total $n untracked files"
-  rm "$UNTRACKED"
-  clrmsg "$CLR_GREEN" "Done"
+  case "$ret" in
+    "$GPC_OK")
+      if test "$DRYRUN" = "n"; then
+        # Report the untracked files
+        setmode
+        n=0
+        for path in $(cat "$UNTRACKED"); do
+          desc=$(LANG=C file "$path" | awk -F ': ' '{print $2}')
+          if echo "$desc" | grep -q -i -E 'source|text|script' ; then
+            RP=$(realpath --relative-to="`pwd`" "$path")
+            clrmsg "$CLR_PINK" "Untracked $RP : $desc"
+          fi
+          n=$(expr "$n" + 1)
+        done
+        msg "Total $n untracked files"
+        clrmsg "$CLR_GREEN" "Done"
+        exit "$GPC_OK"
+      else
+        # Report the dry-run status
+        if test -s "$DESTRUCTIVE"; then
+          clrmsg "$CLR_GREEN" "Durty"
+          exit "$GPC_DURTY"
+        else
+          clrmsg "$CLR_GREEN" "Clean"
+          exit "$GPC_OK"
+        fi
+      fi ;;
+    *) errexit "Abnormal termination";;
+  esac
 else
   # Worker part.
+  test -n "$GPC_UNTRACKED"
+  test -n "$GPC_DESTRUCTIVE"
   { git branch -a; git stash list; } | grep -q "$BNAME" && \
     recoverexit
 
@@ -276,7 +312,7 @@ else
   cd -P "$RROOT"
   RELROOT=$(realpath --relative-to="$GPC_CWD/.." "$RROOT")
   msg "Checking the status of \"$RELROOT\""
-  git status --porcelain | grep -v '^??' | grep -q '^[^\s]*' || exit 0
+  # git status --porcelain | grep -v '^??' | grep -q '^[^\s]*' || exit 0
   run git branch "$BNAME"
   run git stash push -m "$BNAME"
   msg "Pulling fresh commits from the upstream"
