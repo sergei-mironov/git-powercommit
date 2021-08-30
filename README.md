@@ -2,12 +2,12 @@ Git Powercommit
 ===============
 
 This repo contains the end-user [shell script](./git-powercommit) implementing
-`git powercommit` command for commiting and pushing the changes to your Git
+`git powercommit` command for committing and pushing the changes to your Git
 repository. The script uses meaningless commit messages, performs pulls/stashes
 as required and supports git submodules. Thus we try to automate a typical work
 scenario of a lazy developer.
 
-**Disclamer: the Author tried to make this script clean and simple and even
+**Disclaimer: the Author tried to make this script clean and simple and even
 provided a [test](./test.sh). But you know, Git is a complex thing, something
 may not work as expected. Use this script at your own risk.**
 
@@ -19,7 +19,7 @@ The Powercommit algorithm in a nutshell:
 3. Call `git stash`
 4. Call `git pull --rebase`
 5. Apply the stash
-6. Call itself recusively for every git-submodule, unless `--no-recursive` is
+6. Call itself recursively for every git-submodule, unless `--no-recursive` is
    given
 7. Commit every changed submodule
 8. Commit every changed regular file or folder, aggregating the files that
@@ -57,7 +57,7 @@ manually:
     git reset --hard "powercommit"; git stash pop; git branch -D "powercommit"
     ```
 
-You may need to repeat the above sequence for all submodules (recusrive abort is
+You may need to repeat the above sequence for all submodules (recursive abort is
 still in the TODO list). The script will refuse to run if the `powercommit`
 branch already exists.
 
@@ -71,9 +71,10 @@ TODO
 * [x] Hide verbose logging into the logfile.
 * [x] Nix-expression.
 * [x] A Screencast.
-* [ ] A recursive dry-run mode fo execution.
+* [x] Notify about suspicious untracked files.
+* [x] A recursive dry-run mode of execution.
 * [ ] Commit added/removed files based on patterns.
-* [ ] Make recovering from failures simpler and recursive.
+* [ ] Make recursive recovering from failures.
 * [ ] A Manpage.
 * [ ] Neural network generating commit messages :pig:
 
@@ -81,7 +82,7 @@ TODO
 Related links
 -------------
 
-* Git statutus porcelain v2 https://git-scm.com/docs/git-status#_porcelain_format_version_2
+* Git status porcelain v2 https://git-scm.com/docs/git-status#_porcelain_format_version_2
 * ANSI color codes in terminal https://stackoverflow.com/questions/5947742/how-to-change-the-output-color-of-echo-in-linux
 * StackOverflow on generating commit messages https://stackoverflow.com/questions/35010953/how-to-automatically-generate-commit-message
 * PwC: On the Evaluation of Commit Message Generation Models: An Experimental Study https://paperswithcode.com/paper/on-the-evaluation-of-commit-message/review/
