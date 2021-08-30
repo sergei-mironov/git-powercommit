@@ -260,22 +260,19 @@ if test -z "$GPC_WORKER" ; then
   ret="$?"
   case "$ret" in
     "$GPC_OK")
-      if test "$DRYRUN" = "n"; then
-        # Report the untracked files
-        setmode
-        n=0
-        for path in $(cat "$UNTRACKED"); do
-          desc=$(LANG=C file "$path" | awk -F ': ' '{print $2}')
-          if echo "$desc" | grep -q -i -E 'source|text|script' ; then
-            RP=$(realpath --relative-to="`pwd`" "$path")
-            clrmsg "$CLR_PINK" "Untracked $RP : $desc"
-          fi
-          n=$(expr "$n" + 1)
-        done
-        msg "Total $n untracked files"
-        clrmsg "$CLR_GREEN" "Done"
-        exit "$GPC_OK"
-      else
+      # Report the untracked files
+      setmode
+      n=0
+      for path in $(cat "$UNTRACKED"); do
+        desc=$(LANG=C file "$path" | awk -F ': ' '{print $2}')
+        if echo "$desc" | grep -q -i -E 'source|text|script' ; then
+          RP=$(realpath --relative-to="`pwd`" "$path")
+          clrmsg "$CLR_PINK" "Untracked $RP : $desc"
+        fi
+        n=$(expr "$n" + 1)
+      done
+      msg "Total $n untracked files"
+      if test "$DRYRUN" = "y" ; then
         # Report the dry-run status
         if test -s "$DESTRUCTIVE"; then
           clrmsg "$CLR_GREEN" "Durty"
@@ -284,7 +281,12 @@ if test -z "$GPC_WORKER" ; then
           clrmsg "$CLR_GREEN" "Clean"
           exit "$GPC_OK"
         fi
-      fi ;;
+      else
+        # Normal termination
+        clrmsg "$CLR_GREEN" "Done"
+        exit "$GPC_OK"
+      fi
+      ;;
     *) errexit "Abnormal termination";;
   esac
 else
