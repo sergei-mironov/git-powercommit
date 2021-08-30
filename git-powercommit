@@ -207,7 +207,6 @@ filter_untracked() {
 commit_untracked() {
   local path="$1"
   echo $(git rev-parse --show-toplevel)/$path >> "$GPC_UNTRACKED"
-  echo $(git rev-parse --show-toplevel)/$path >> "$GPC_DESTRUCTIVE"
 }
 
 filter_subm() {
