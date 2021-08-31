@@ -8,7 +8,7 @@ GPC_ERR=2
 # to a logfile. One need to find the way for them to print messages to the
 # terminal.
 
-if test -z "$GPC_WORKER" ; then
+if test "$GPC_WORKER" != "y" ; then
   export CLR_RED=`tput setaf 1 || echo ""`
   export CLR_GREEN=`tput setaf 2 || echo ""`
   export CLR_BLUE=`tput setaf 4 || echo ""`
@@ -34,7 +34,7 @@ clrmsg() {
 }
 
 monmsg() {
-  if test -z "$GPC_WORKER" ; then
+  if test "$GPC_WORKER" != "y" ; then
     clrmsg "$CLR_BLUE" "$@"
   fi
 }
@@ -228,20 +228,20 @@ commit_subm() {
   run git commit -m "Bump $path"
 }
 
-if test -z "$GPC_WORKER" ; then
+if test "$GPC_WORKER" != "y"; then
   # The top-level branch, re-runs the script later in "worker" mode.
-  if test "$DRYRUN" = "n" ; then
-    "$GPC" "$@" --dry-run --quiet
-    ret="$?"
-    case "$ret" in
-      "$GPC_OK")
-        clrmsg "$CLR_GREEN" "Nothing to do"
-        exit "$GPC_OK" ;;
-      "$GPC_DURTY") ;;
-      *)
-        errexit "Abnormal termination" ;;
-    esac
-  fi
+  # if test "$DRYRUN" = "n" ; then
+  #   "$GPC" "$@" --dry-run --quiet
+  #   ret="$?"
+  #   case "$ret" in
+  #     "$GPC_OK")
+  #       clrmsg "$CLR_GREEN" "Nothing to do"
+  #       exit "$GPC_OK" ;;
+  #     "$GPC_DURTY") ;;
+  #     *)
+  #       errexit "Abnormal termination" ;;
+  #   esac
+  # fi
   { echo; echo
     echo "============================================================"
     echo "Starting git-powercommit, dry-run=$DRYRUN, $(LANG=C date)"
@@ -314,6 +314,22 @@ else
   RELROOT=$(realpath --relative-to="$GPC_CWD/.." "$RROOT")
   msg "Checking the status of \"$RELROOT\""
   # git status --porcelain | grep -v '^??' | grep -q '^[^\s]*' || exit 0
+  if test "$DRYRUN" = "n" ; then
+    set +e
+    GPC_WORKER=n "$GPC" "$@" --dry-run --quiet
+    ret="$?"
+    set -e
+    case "$ret" in
+      "$GPC_OK")
+        clrmsg "$CLR_GREEN" "Nothing to do"
+        exit "$GPC_OK" ;;
+      "$GPC_DURTY")
+        msg "Applying changes" ;;
+      *)
+        clrmsg "$CLR_RED" "Dry-run failed"
+        exit "$ret" ;;
+    esac
+  fi
   run git branch "$BNAME"
   run git stash push -m "$BNAME"
   msg "Pulling fresh commits from the upstream"
