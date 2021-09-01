@@ -19,19 +19,23 @@ fi
 # Logs go to stderr, which could be redirected to a file. User messages go to
 # stdout which is not normally redirected.
 msg() {
-  if test "$LOGFILE" != '-' && test "$QUIET" = "n" ; then
+  if test "$LOGFILE" != '-' && test "$QUIET_LOGS" = "n" ; then
     echo "$GPC_INDENT$@"
   fi
   echo "$GPC_INDENT$@" >&2
 }
 
-clrmsg() {
-  clr="$1" ; shift
-  if test "$LOGFILE" != '-' && test "$QUIET" = "n" ; then
+clrmsg_() {
+  local q="$1" ; shift
+  local clr="$1" ; shift
+  if test "$LOGFILE" != '-' && test "$q" = "n" ; then
     echo "$GPC_INDENT${clr}$@${CLR_RESET}"
   fi
   echo "$GPC_INDENT$@" >&2
 }
+
+clrmsg() { clrmsg_ "$QUIET_LOGS" "$@" ; }
+clrrep() { clrmsg_ "$QUIET_REPORTS" "$@" ; }
 
 monmsg() {
   if test "$GPC_WORKER" != "y" ; then
@@ -63,8 +67,12 @@ DRYRUN=n
 DEBUG=y
 NODEBUG=n
 RECURSIVE=y
-QUIET=n
-opts=$(getopt -o ':h' -l "no-recursive,dry-run,help,debug,no-debug,log:,quiet" -- "$@")
+QUIET_LOGS=n
+QUIET_REPORTS=n
+opts=$(getopt -o ':h' -l \
+"no-recursive,dry-run,help,debug,no-debug,log:,"\
+"quiet,quiet-logs,quiet-reports" \
+-- "$@")
 if test "$?" != "0" ; then
   echo "Invalid options passed" >&2
   SHOWHELP=y
@@ -79,7 +87,9 @@ else
       --debug) DEBUG=y ;;
       --no-debug) NODEBUG=y ;;
       --no-recursive) RECURSIVE=n ;;
-      --quiet) QUIET=y ;;
+      --quiet-logs) QUIET_LOGS=y ;;
+      --quiet-reports) QUIET_REPORTS=y ;;
+      --quiet) QUIET_LOGS=y ; QUIET_REPORTS=y ;;
       -h|--help) SHOWHELP=y ;;
       *) msg "Unknown option $1"; SHOWHELP=y ;;
     esac
@@ -229,19 +239,6 @@ commit_subm() {
 }
 
 if test "$GPC_WORKER" != "y"; then
-  # The top-level branch, re-runs the script later in "worker" mode.
-  # if test "$DRYRUN" = "n" ; then
-  #   "$GPC" "$@" --dry-run --quiet
-  #   ret="$?"
-  #   case "$ret" in
-  #     "$GPC_OK")
-  #       clrmsg "$CLR_GREEN" "Nothing to do"
-  #       exit "$GPC_OK" ;;
-  #     "$GPC_DURTY") ;;
-  #     *)
-  #       errexit "Abnormal termination" ;;
-  #   esac
-  # fi
   { echo; echo
     echo "============================================================"
     echo "Starting git-powercommit, dry-run=$DRYRUN, $(LANG=C date)"
@@ -266,23 +263,23 @@ if test "$GPC_WORKER" != "y"; then
         desc=$(LANG=C file "$path" | awk -F ': ' '{print $2}')
         if echo "$desc" | grep -q -i -E 'source|text|script' ; then
           RP=$(realpath --relative-to="`pwd`" "$path")
-          clrmsg "$CLR_PINK" "Untracked $RP : $desc"
+          clrrep "$CLR_PINK" "Untracked $RP : $desc"
         fi
         n=$(expr "$n" + 1)
       done
-      msg "Total $n untracked files"
+      clrrep "$CLR_RESET" "Total $n untracked files"
       if test "$DRYRUN" = "y" ; then
         # Report the dry-run status
         if test -s "$DESTRUCTIVE"; then
-          clrmsg "$CLR_GREEN" "Durty"
+          clrrep "$CLR_GREEN" "Durty"
           exit "$GPC_DURTY"
         else
-          clrmsg "$CLR_GREEN" "Clean"
+          clrrep "$CLR_GREEN" "Clean"
           exit "$GPC_OK"
         fi
       else
         # Normal termination
-        clrmsg "$CLR_GREEN" "Done"
+        clrrep "$CLR_GREEN" "Done"
         exit "$GPC_OK"
       fi
       ;;
@@ -313,7 +310,6 @@ else
   cd -P "$RROOT"
   RELROOT=$(realpath --relative-to="$GPC_CWD/.." "$RROOT")
   msg "Checking the status of \"$RELROOT\""
-  # git status --porcelain | grep -v '^??' | grep -q '^[^\s]*' || exit 0
   if test "$DRYRUN" = "n" ; then
     set +e
     GPC_WORKER=n "$GPC" "$@" --dry-run --quiet
