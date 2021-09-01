@@ -74,7 +74,7 @@ TODO
 * [x] Notify about suspicious untracked files.
 * [x] A recursive dry-run mode of execution.
 * [ ] Commit added/removed files based on patterns.
-* [ ] Make recursive recovering from failures.
+* [x] Make recursive recovering from failures.
 * [ ] A Manpage.
 * [ ] Neural network generating commit messages :pig:
 
