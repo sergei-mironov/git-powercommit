@@ -188,11 +188,11 @@ test_screencap() {(
 set -e -x
 rm -rf "$TROOT" || true
 
-# test_screencap
-test1
-test2
-test_log
-test_detached_head
-test_untracked
+test_screencap
+# test1
+# test2
+# test_log
+# test_detached_head
+# test_untracked
 echo OK
 
