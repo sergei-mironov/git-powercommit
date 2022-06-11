@@ -55,13 +55,14 @@ needsrecover() {
 needsrecoverexit() {
   errexit $'\n'"Looks like the previous call to git-powercommit failed." \
           "Consider making some investigation, then remove the branch" \
-          "\`$BNAME\` and the stash of the same name. Typical repair" \
+          "'$BNAME' and the stash of the same name. Typical repair" \
           "commands are:" $'\n\n\t' \
           "git reset --hard \"$BNAME\"; git stash pop;" \
           "git branch -D \"$BNAME\"" $'\n'
 }
 badexit() {
   errexit $'\n'"Something goes wrong." \
+          "The last command was:" $'\n\n\t' "$(cat $GPC_LASTCOMMAND)" $'\n\n' \
           "Consider reviewing the \"$(logname $LOGFILE)\"" \
           "and recover to the initial state by calling the abort mode:" \
           $'\n\n\t' \
@@ -73,7 +74,7 @@ logname() {
 }
 
 which git 2>&1 >/dev/null || \
-  errexit "\`git\` is not installed"
+  errexit "'git' is not installed"
 
 ME=`basename $0`
 GPC="$(cd -P $(dirname $0) && pwd)/$ME"
@@ -151,7 +152,16 @@ run() {
   if test "$DRYRUN" = "y" ; then
     msg "${GPC_INDENT}dry-run: $@"
   else
-    "$@" 1>&2
+    if test -f "$GPC_LASTCOMMAND" ; then
+      echo -n "$@" >$GPC_LASTCOMMAND
+    fi
+    "$@" 1>&2 && ret=0 || ret=$?
+    if test -f "$GPC_LASTCOMMAND" ; then
+      echo " (exitcode: $ret)" >> $GPC_LASTCOMMAND
+    fi
+    if test "$ret" != "0" ; then
+      exit $ret
+    fi
   fi
 }
 
@@ -262,12 +272,16 @@ if test "$GPC_WORKER" != "y"; then
   } >&2
   UNTRACKED=$(mktemp -t git_pcmt_untracked_$$_XXXXX.txt)
   DESTRUCTIVE=$(mktemp -t git_pcmt_destructive_$$_XXXXX.txt)
-  trap "rm $UNTRACKED $DESTRUCTIVE; badexit" SIGINT
-  trap "rm $UNTRACKED $DESTRUCTIVE" EXIT
+  GPC_LASTCOMMAND=$(mktemp -t git_pcmt_lastcommand_$$_XXXXX.txt)
+  trap "rm $UNTRACKED $DESTRUCTIVE; badexit; rm $GPC_LASTCOMMAND" SIGINT
+  trap "rm $UNTRACKED $DESTRUCTIVE $GPC_LASTCOMMAND" EXIT
+  echo '-' >$GPC_LASTCOMMAND
+
   GPC_CWD="`pwd`" \
   GPC_WORKER=y \
   GPC_UNTRACKED=$UNTRACKED \
   GPC_DESTRUCTIVE=$DESTRUCTIVE \
+  GPC_LASTCOMMAND=$GPC_LASTCOMMAND \
     "$GPC" "$@"
   ret="$?"
   case "$ret" in
