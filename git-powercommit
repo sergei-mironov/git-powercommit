@@ -160,7 +160,7 @@ run() {
       echo " (exitcode: $ret)" >> $GPC_LASTCOMMAND
     fi
     if test "$ret" != "0" ; then
-      exit $ret
+      return $ret
     fi
   fi
 }
@@ -357,25 +357,9 @@ else
     done
   fi
 
-  msg "Checking the status of \"$RELROOT\""
-  if test "$DRYRUN" = "n" ; then
-    set +e
-    GPC_WORKER=n "$GPC" "$@" --dry-run --quiet
-    ret="$?"
-    set -e
-    case "$ret" in
-      "$GPC_OK")
-        clrmsg "$CLR_GREEN" "Nothing to do"
-        exit "$GPC_OK" ;;
-      "$GPC_DURTY")
-        msg "Applying changes" ;;
-      *)
-        clrmsg "$CLR_RED" "Dry-run failed"
-        exit "$ret" ;;
-    esac
-  fi
+  msg "Creating a backup branch and stash"
   run git branch "$BNAME"
-  run git stash push -m "$BNAME"
+  run git stash push -m "$BNAME" || true # Could be empty
   msg "Pulling fresh commits from the upstream"
   run git pull --rebase
   run git stash apply || true # Could be empty
