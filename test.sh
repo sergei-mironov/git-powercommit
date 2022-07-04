@@ -6,6 +6,7 @@ PWD=$(cd $(dirname $0); pwd;)
 PATH=$PWD:$PATH
 
 mkrepo() {(
+  # Create repo $1 and the corrsponding bare-bone repor $1.git
   set -e -x
   local name="$1"
   test -d "$TD"
@@ -130,8 +131,8 @@ test_log() {(
   modify repo1 'modules/sub1/lvl1/file1'
   cd -P "$TD/repo1"
   powercommit repo1 --debug --log=$TD/powercommit2.log
-  cat $TD/powercommit2.log | grep '^Checking the status'
-  cat $TD/powercommit2.log | grep '^  Checking the status'
+  cat $TD/powercommit2.log | grep '^Creating a backup'
+  cat $TD/powercommit2.log | grep '^  Creating a backup'
 )}
 
 test_detached_head() {(
@@ -185,6 +186,22 @@ test_screencap() {(
   echo Bar>$TD/repo1/modules/sub1/fileB
 )}
 
+test_always_gpr() {(
+  set -e -x
+  export TD="$TROOT/test_always_gpr"
+  mkdir -p "$TD"
+  mkrepo repo1
+  mkrepoS repo1 sub1 modules/sub1
+  modify sub1 'lvl1/file1'
+  powercommit sub1
+  cat $TD/sub1/lvl1/file1 | grep "Modified"
+
+  powercommit repo1 --debug
+  # cd -P "$TD/repo1"
+  # git submodule foreach git pull
+  cat $TD/repo1/modules/sub1/lvl1/file1 | grep "Modified"
+)}
+
 set -e -x
 rm -rf "$TROOT" || true
 
@@ -194,5 +211,6 @@ test2
 test_log
 test_detached_head
 test_untracked
+test_always_gpr
 echo OK
 
